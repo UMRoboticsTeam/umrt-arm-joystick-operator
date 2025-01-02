@@ -11,4 +11,4 @@ docker run \
   --device `readlink -f /dev/input/arm_joystick` \
   --entrypoint /bin/bash \
   umrt-arm-image \
-  -c "cd /releases/arm-firmware/joystick-operator && source install/setup.bash && ros2 launch joystick_operator joystick.launch.py"
+  -c "cd /releases/arm-firmware/joystick-operator && source install/setup.bash && ros2 launch umrt_arm_joystick_operator joystick.launch.py"
