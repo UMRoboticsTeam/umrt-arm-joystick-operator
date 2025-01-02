@@ -1,0 +1,27 @@
+name: Build library
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/umroboticsteam/umrt-build:testing-docker-build
+
+    steps:
+      - name: Checkout project
+        working-directory: ./src
+        uses: actions/checkout@v2
+        with:
+          submodules: 'true'
+        
+      - name: Prepare to build debian
+        working-directory: ./src
+        run: bloom-generate rosdebian
+
+      - name: Build debian
+        working-directory: ./src
+        run: fakeroot debian/rules binary
