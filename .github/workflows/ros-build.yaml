@@ -23,6 +23,7 @@ jobs:
         working-directory: ./src
         run: |
           . /opt/ros/humble/setup.sh
+          rosdep update
           bloom-generate rosdebian
 
       - name: Build debian
