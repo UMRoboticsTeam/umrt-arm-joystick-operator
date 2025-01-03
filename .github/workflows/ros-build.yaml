@@ -59,10 +59,8 @@ jobs:
         working-directory: .
         run: |
           echo -n "$APT_SIGNING_KEY" | gpg --import
-          echo "$APT_DEPLOY_KEY" > umrt_deploy_key
         env:
           APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
-          APT_DEPLOY_KEY: ${{ secrets.APT_DEPLOY_KEY }}
 
       - name: Checkout apt repo
         uses: actions/checkout@v4
@@ -72,7 +70,7 @@ jobs:
           ref: 'testing-ci-cd'
           # Note that this is persisted in the local Git config until the post-job task
           persist-credentials: true
-          ssh-key: ./umrt_deploy_key
+          ssh-key: {{ secrets.APT_DEPLOY_KEY }}
 
       - name: Publish debians
         working-directory: ./apt
@@ -86,8 +84,3 @@ jobs:
           git add --all
           git commit -S -m "Uploaded new version of ${{ github.repository }}"
           git push origin
-
-      - name: Cleanup
-        working-directory: .
-        run: |
-          rm -f umrt_deploy_key
