@@ -59,7 +59,7 @@ jobs:
         working-directory: .
         run: |
           echo -n "$APT_SIGNING_KEY" | gpg --import
-          echo -n "$APT_DEPLOY_KEY" > umrt_deploy_key
+          echo "$APT_DEPLOY_KEY" > umrt_deploy_key
         env:
           APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
           APT_DEPLOY_KEY: ${{ secrets.APT_DEPLOY_KEY }}
