@@ -55,13 +55,6 @@ jobs:
         with:
           name: deb
 
-      - name: Load signing and deploy keys
-        working-directory: .
-        run: |
-          echo -n "$APT_SIGNING_KEY" | gpg --import
-        env:
-          APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
-
       - name: Checkout apt repo
         uses: actions/checkout@v4
         with:
@@ -71,6 +64,15 @@ jobs:
           # Note that this is persisted in the local Git config until the post-job task
           persist-credentials: true
           ssh-key: ${{ secrets.APT_DEPLOY_KEY }}
+
+      - name: Load signing key
+        working-directory: ./apt
+        # We load private from the secret, and then any public keys in the repo
+        run: |
+          echo -n "$APT_SIGNING_KEY" | gpg --import
+          gpg --import *.asc
+        env:
+          APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
 
       - name: Publish debians
         working-directory: ./apt
