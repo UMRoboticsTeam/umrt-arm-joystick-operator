@@ -14,9 +14,9 @@ jobs:
 
     steps:
       - name: Checkout project
-        working-directory: ./src
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
+          path: ./src
           submodules: 'true'
 
       - name: Prepare to build debian
@@ -28,7 +28,6 @@ jobs:
         run: fakeroot debian/rules binary
 
       - name: Pass deb to publishing container
-        working-directory: .
         uses: actions/upload-artifact@v4
         with:
           name: deb
@@ -43,14 +42,12 @@ jobs:
 
     steps:
       - name: Download deb
-        working-directory: .
         uses: actions/download-artifact@v4
         with:
           name: deb
           path: ./deb
 
       - name: Delete deb artifact
-        working-directory: .
         uses: geekyeggo/delete-artifact@v5
         with:
           name: deb
@@ -65,8 +62,7 @@ jobs:
           APT_DEPLOY_KEY: ${{ secrets.APT_DEPLOY_KEY }}
 
       - name: Checkout apt repo
-        working-directory: .
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: 'UMRoboticsTeam/umrt-apt-repo'
           path: ./apt
