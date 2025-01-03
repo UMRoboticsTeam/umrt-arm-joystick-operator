@@ -22,7 +22,7 @@ jobs:
       - name: Prepare to build debian
         working-directory: ./src
         run: |
-          source /opt/ros/humble/setup.bash
+          . /opt/ros/humble/setup.sh
           bloom-generate rosdebian
 
       - name: Build debian
