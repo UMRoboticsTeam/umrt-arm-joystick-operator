@@ -67,10 +67,8 @@ jobs:
 
       - name: Load signing key
         working-directory: ./apt
-        # We load private from the secret, and then any public keys in the repo
         run: |
           echo -n "$APT_SIGNING_KEY" | gpg --import
-          gpg --import *.asc
         env:
           APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
 
@@ -83,7 +81,7 @@ jobs:
         run: |
           git config user.name 'University of Manitoba Robotics Team Build Server'
           git config user.email 'umrt.exec@gmail.com'
-          git config user.signingkey $(gpg --list-signatures $(git config --get user.email) | sed -n '/^\s/s/\s*//p')
+          git config user.signingkey "$(gpg --list-signatures $(git config --get user.email) | sed -n '/^\s/s/\s*//p')"
           git add --all
           git commit -S -m "Uploaded new version of ${{ github.repository }}"
           git push origin
