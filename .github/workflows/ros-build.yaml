@@ -78,6 +78,7 @@ jobs:
 
       - name: Push apt repo
         working-directory: ./apt
+        shell: bash
         run: |
           git config user.name 'University of Manitoba Robotics Team Build Server'
           git config user.email 'umrt.exec@gmail.com'
