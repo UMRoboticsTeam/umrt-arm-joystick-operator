@@ -55,10 +55,6 @@ jobs:
         with:
           name: deb
 
-      - name: Prepare for apt repository
-        working-directory: .
-        run: echo -n "$APT_DEPLOY_KEY"
-
       - name: Load signing and deploy keys
         working-directory: .
         run: |
