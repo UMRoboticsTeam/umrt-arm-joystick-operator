@@ -73,6 +73,7 @@ jobs:
         with:
           repository: 'UMRoboticsTeam/umrt-apt-repo'
           path: ./apt
+          ref: 'testing-ci-cd'
           # Note that this is persisted in the local Git config until the post-job task
           persist-credentials: true
           ssh-key: ./umrt_deploy_key
