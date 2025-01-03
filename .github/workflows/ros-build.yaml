@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: 'true'
-        
+
       - name: Prepare to build debian
         working-directory: ./src
         run: bloom-generate rosdebian
@@ -25,3 +25,72 @@ jobs:
       - name: Build debian
         working-directory: ./src
         run: fakeroot debian/rules binary
+
+      - name: Pass deb to publishing container
+        working-directory: .
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb
+          path: "*.deb"
+
+  publish:
+    needs: build
+
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/umroboticsteam/umrt-apt-image:initial-setup
+
+    steps:
+      - name: Download deb
+        working-directory: .
+        uses: actions/download-artifact@v4
+        with:
+          name: deb
+          path: ./deb
+
+      - name: Delete deb artifact
+        working-directory: .
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: deb
+
+      - name: Prepare for apt repository
+        working-directory: .
+        run: echo -n "$APT_DEPLOY_KEY"
+
+      - name: Load signing and deploy keys
+        working-directory: .
+        run: |
+          echo -n "$APT_SIGNING_KEY" | gpg --import
+          echo -n "$APT_DEPLOY_KEY" > umrt_deploy_key
+        env:
+          APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
+          APT_DEPLOY_KEY: ${{ secrets.APT_DEPLOY_KEY }}
+
+      - name: Checkout apt repo
+        working-directory: .
+        uses: actions/checkout@v2
+        with:
+          repository: 'UMRoboticsTeam/umrt-apt-repo'
+          path: ./apt
+          # Note that this is persisted in the local Git config until the post-job task
+          persist-credentials: true
+          ssh-key: ./umrt_deploy_key
+
+      - name: Publish debians
+        working-directory: ./apt
+        run: reprepro --section arm --component main --priority 0 includedeb humble ../deb/*
+
+      - name: Push apt repo
+        working-directory: ./apt
+        run: |
+          git config --global user.name 'UMRT Build Server'
+          git config --global user.email 'umrt.exec@gmail.com'
+          git add --all
+          git commit -S -m "Uploaded new version of ${{ github.repository }}"
+          git push origin
+
+      - name: Cleanup
+        working-directory: .
+        run: |
+          rm -f umrt_deploy_key
