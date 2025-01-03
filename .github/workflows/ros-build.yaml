@@ -79,7 +79,7 @@ jobs:
       - name: Push apt repo
         working-directory: ./apt
         run: |
-          git config --global user.name 'UMRT Build Server'
+          git config --global user.name 'University of Manitoba Robotics Team Build Server'
           git config --global user.email 'umrt.exec@gmail.com'
           git add --all
           git commit -S -m "Uploaded new version of ${{ github.repository }}"
