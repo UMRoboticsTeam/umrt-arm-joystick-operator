@@ -30,11 +30,19 @@ jobs:
         working-directory: ./src
         run: fakeroot debian/rules binary
 
-      - name: Pass deb to publishing container
+      - name: Encrypt deb
+        working-directory: .
+        run: |
+          echo -n "$APT_SIGNING_PUBKEY" | gpg --import
+          gpg --encrypt --recipient exec.umrt@gmail.com --trust-model tofu --use-embedded-filename *.deb
+        env:
+          APT_SIGNING_PUBKEY: ${{ secrets.APT_SIGNING_PUBKEY }}
+
+      - name: Pass encrypted deb to publishing container
         uses: actions/upload-artifact@v4
         with:
-          name: deb
-          path: "*.deb"
+          name: encrypted-deb
+          path: "*.deb.gpg"
 
   publish:
     needs: build
@@ -47,13 +55,13 @@ jobs:
       - name: Download deb
         uses: actions/download-artifact@v4
         with:
-          name: deb
+          name: encrypted-deb
           path: ./deb
 
       - name: Delete deb artifact
         uses: geekyeggo/delete-artifact@v5
         with:
-          name: deb
+          name: encrypted-deb
 
       - name: Checkout apt repo
         uses: actions/checkout@v4
@@ -65,16 +73,18 @@ jobs:
           persist-credentials: true
           ssh-key: ${{ secrets.APT_DEPLOY_KEY }}
 
-      - name: Load signing key
-        working-directory: ./apt
+      - name: Load signing key and decrypt deb
+        working-directory: ./deb
         run: |
           echo -n "$APT_SIGNING_KEY" | gpg --import
+          gpg --decrypt --use-embedded-filename *.deb.gpg
+          rm *.deb.gpg
         env:
           APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
 
       - name: Publish debians
         working-directory: ./apt
-        run: reprepro --section arm --component main --priority 0 includedeb humble ../deb/*
+        run: reprepro --section arm --component main --priority 0 includedeb humble ../deb/*.deb
 
       - name: Push apt repo
         working-directory: ./apt
