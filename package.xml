@@ -4,7 +4,7 @@
   <name>umrt_arm_joystick_operator</name>
   <version>1.0.0</version>
   <description>Joystick teleop for the University of Manitoba Robotics Team's Robotic Arm</description>
-  <maintainer email="noah.reeder@ieee.org">Noah Reeder</maintainer>
+  <maintainer email="noahreederatc@gmail.com">Noah Reeder</maintainer>
   <license>Private</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
