@@ -30,24 +30,6 @@ jobs:
         working-directory: ./src
         run: fakeroot debian/rules binary
 
-      - name: Parse version number
-        working-directory: .
-        # Save version number into an environment variable for use in a different step
-        run: echo "PKG_VERSION=$(dpkg -f *.deb 'Version')" >> "GITHUB_ENV"
-        shell: bash
-
-      - name: Create version tag
-        uses: actions/github-script@v5
-        with:
-          script: |
-            const {PKG_VERSION} = process.env   
-            github.rest.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: `refs/tags/v${PKG_VERSION}`,
-              sha: context.sha
-            })
-
       - name: Encrypt deb
         working-directory: .
         run: |
@@ -114,3 +96,26 @@ jobs:
           git add --all
           git commit -S -m "Uploaded new version of ${{ github.repository }}"
           git push origin
+
+      - name: Checkout source for tagging
+        uses: actions/checkout@v4
+        with:
+          path: ./src
+
+      - name: Parse version number
+        working-directory: ./src
+        # Save version number into an environment variable for use in a different step
+        run: echo "PKG_VERSION=$(xml_grep --text_only 'package/version' package.xml)" >> "GITHUB_ENV"
+        shell: bash
+
+      - name: Create version tag
+        uses: actions/github-script@v5
+        with:
+          script: |
+            const {PKG_VERSION} = process.env   
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/tags/v${PKG_VERSION}`,
+              sha: context.sha
+            })
