@@ -94,7 +94,7 @@ jobs:
       - name: Parse version number
         working-directory: ./src
         # Save version number into an environment variable for use in different steps
-        run: echo "PKG_VERSION=$(xml_grep --text_only 'package/version' package.xml)" >> "GITHUB_ENV"
+        run: echo "PKG_VERSION=$(xml_grep --text_only 'package/version' package.xml)" >> "$GITHUB_ENV"
         shell: bash
 
       - name: Publish debians
