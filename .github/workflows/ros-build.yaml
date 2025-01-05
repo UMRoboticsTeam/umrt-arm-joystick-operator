@@ -51,6 +51,9 @@ jobs:
     container:
       image: ghcr.io/umroboticsteam/umrt-apt-image:initial-setup
 
+    permissions:
+      contents: write
+
     steps:
       - name: Download deb
         uses: actions/download-artifact@v4
