@@ -40,7 +40,9 @@ jobs:
 
       - name: Validated?
         if: steps.action.outputs.is-version-increased != 'true'
-        run: echo "::error::Version is not incremented, $PR_PKG_VERSION is not greater than $BASE_PKG_VERSION"
+        run: |
+          echo "::error::Version is not incremented, $PR_PKG_VERSION is not greater than $BASE_PKG_VERSION"
+          exit 1
         env:
           PR_PKG_VERSION: ${{ steps.extract-versions.outputs.PR_PKG_VERSION }}
           BASE_PKG_VERSION: ${{ steps.extract-versions.outputs.BASE_PKG_VERSION }}
