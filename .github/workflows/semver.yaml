@@ -27,16 +27,16 @@ jobs:
         working-directory: .
         id: extract-versions
         run: |
-          echo "PR_PKG_VERSION=$(xml_grep --text_only 'package/version' pr/package.xml)" >> "$GITHUB_OUTPUT"
-          echo "BASE_PKG_VERSION=$(xml_grep --text_only 'package/version' base/package.xml)" >> "$GITHUB_OUTPUT"
+          echo "PR_PKG_VERSION=$(xml_grep --text_only 'package/version' pr/package.xml)" >> "$GITHUB_ENV"
+          echo "BASE_PKG_VERSION=$(xml_grep --text_only 'package/version' base/package.xml)" >> "$GITHUB_ENV"
         shell: bash
 
       - name: Compare semantic versions
         uses: aleoyakas/check-semver-increased-action@v1
         id: check-version
         with:
-          current-version: ${{ steps.extract-versions.outputs.PR_PKG_VERSION }}
-          previous-version: ${{ steps.extract-versions.outputs.BASE_PKG_VERSION }}
+          current-version: ${{ env.PR_PKG_VERSION }}
+          previous-version: ${{ env.BASE_PKG_VERSION }}
 
       - name: Validated?
         if: steps.check-version.outputs.is-version-increased != 'true'
