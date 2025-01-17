@@ -66,7 +66,7 @@ jobs:
       - name: Pass encrypted deb to publishing container
         uses: actions/upload-artifact@v4
         with:
-          name: encrypted-deb
+          name: encrypted-deb-${{ matrix.arch }}
           path: "*.deb.gpg"
 
   publish:
@@ -81,16 +81,12 @@ jobs:
       packages: read
 
     steps:
-      - name: Download deb
+      - name: Download debs
         uses: actions/download-artifact@v4
         with:
-          name: encrypted-deb
-          path: ./deb
-
-      - name: Delete deb artifact
-        uses: geekyeggo/delete-artifact@v5
-        with:
-          name: encrypted-deb
+          pattern: encrypted-deb-*
+          path: ./debs
+          merge-multiple: true
 
       - name: Checkout apt repo
         uses: actions/checkout@v4
@@ -102,11 +98,11 @@ jobs:
           persist-credentials: true
           ssh-key: ${{ secrets.APT_DEPLOY_KEY }}
 
-      - name: Load signing key and decrypt deb
-        working-directory: ./deb
+      - name: Load signing key and decrypt debs
+        working-directory: ./debs
         run: |
           echo -n "$APT_SIGNING_KEY" | gpg --import
-          gpg --decrypt --use-embedded-filename *.deb.gpg
+          gpg --decrypt --multifile --use-embedded-filename *.deb.gpg
           rm *.deb.gpg
         env:
           APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
@@ -148,3 +144,18 @@ jobs:
               ref: `refs/tags/v${PKG_VERSION}`,
               sha: context.sha
             })
+  cleanup:
+    # Always run after all these jobs, regardless of if they succeed
+    if: ${{ always() }}
+    needs:
+      - build
+      - publish
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Delete amd64 deb artifact
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: |
+            encrypted-deb-*
