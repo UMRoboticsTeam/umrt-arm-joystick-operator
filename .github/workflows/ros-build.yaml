@@ -120,7 +120,7 @@ jobs:
 
       - name: Publish debians
         working-directory: ./apt
-        run: reprepro --section arm --component main --priority 0 includedeb humble ../deb/*.deb
+        run: reprepro --section arm --component main --priority 0 includedeb humble ../debs/*.deb
 
       - name: Push apt repo
         working-directory: ./apt
