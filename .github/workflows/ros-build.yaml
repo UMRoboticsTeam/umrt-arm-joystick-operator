@@ -48,6 +48,7 @@ jobs:
             --platform linux/${{ matrix.arch }} \
             ${{ env.BUILD_IMAGE }} \
             bash -c "\
+            cd src && \
             source /opt/ros/humble/setup.sh && \
             rosdep update && \
             bloom-generate rosdebian && \
