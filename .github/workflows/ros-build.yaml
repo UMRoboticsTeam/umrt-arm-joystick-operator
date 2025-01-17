@@ -6,11 +6,21 @@ on:
       - main
       - ci-cd
 
+env:
+  REGISTRY: ghcr.io
+  BUILD_IMAGE: ghcr.io/umroboticsteam/umrt-build:testing-docker-build
+
 jobs:
   build:
+    strategy:
+      matrix:
+        arch:
+          - amd64
+          - arm64
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/umroboticsteam/umrt-build:testing-docker-build
+
+    permissions:
+      packages: read
 
     steps:
       - name: Checkout project
@@ -19,16 +29,30 @@ jobs:
           path: ./src
           submodules: 'true'
 
-      - name: Prepare to build debian
-        working-directory: ./src
-        run: |
-          . /opt/ros/humble/setup.sh
-          rosdep update
-          bloom-generate rosdebian
+      - name: Log in to the container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build debian
-        working-directory: ./src
-        run: fakeroot debian/rules binary
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Build and package in potentially emulated Docker container
+        run: |
+          docker run \
+            --rm \
+            -v $(pwd):/${{ github.workspace }} \
+            -w ${{ github.workspace }} \
+            --platform linux/${{ matrix.arch }} \
+            ${{ env.BUILD_IMAGE }} \
+            bash -c "\
+            source /opt/ros/humble/setup.sh && \
+            rosdep update && \
+            bloom-generate rosdebian && \
+            fakeroot debian/rules binary \
+            "
 
       - name: Encrypt deb
         working-directory: .
