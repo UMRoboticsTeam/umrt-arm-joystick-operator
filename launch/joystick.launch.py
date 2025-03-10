@@ -6,7 +6,7 @@ from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
 
-    joy_params = os.path.join(get_package_share_directory('joystick_operator'),'launch','joystick.yaml')
+    joy_params = os.path.join(get_package_share_directory('umrt_arm_joystick_operator'),'launch','joystick.yaml')
 
     joy_node = Node(
             package='joy',
@@ -15,8 +15,8 @@ def generate_launch_description():
          )
 
     joystick_operator_node = Node(
-            package='joystick_operator', 
-            executable='joystick_operator',
+            package='umrt_arm_joystick_operator',
+            executable='umrt_arm_joystick_operator',
             name = 'joystick_operator_node',
             parameters=[joy_params]
             )

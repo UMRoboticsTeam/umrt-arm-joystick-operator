@@ -3,7 +3,7 @@
 //
 
 #include "rclcpp/rclcpp.hpp"
-#include "joystick_operator/joystick_teleop_node.hpp"
+#include "umrt_arm_joystick_operator/joystick_teleop_node.hpp"
 
 int main(int argc, char* argv[]){
     rclcpp::init(argc, argv);

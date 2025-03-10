@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(joystick_operator)
+project(umrt_arm_joystick_operator)
 
 set(CMAKE_CXX_STANDARD 14)
 
