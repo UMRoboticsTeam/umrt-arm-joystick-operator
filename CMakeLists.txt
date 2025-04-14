@@ -10,10 +10,6 @@ endif()
 # Fixes intellisense not finding ros2 headers https://youtrack.jetbrains.com/issue/CPP-29747/Certain-ROS2-package-headers-missing-from-Intellisense-when-using-a-Docker-toolchain
 include_directories(SYSTEM /opt/ros/$ENV{ROS_DISTRO}/include)
 
-# Setup Boost
-find_package(Boost REQUIRED COMPONENTS log log_setup)
-include_directories(${Boost_INCLUDE_DIRS})
-
 # find dependencies
 set(THIS_PACKAGE_INCLUDE_DEPENDS
         rclcpp
@@ -34,10 +30,20 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
         )
-target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES})
 ament_target_dependencies(
         ${PROJECT_NAME} PUBLIC
         ${THIS_PACKAGE_INCLUDE_DEPENDS}
+)
+
+# Parse version number from the file
+file(READ "version" version_input)
+string(REGEX MATCH "([0-9]+)\.([0-9]+)\.([0-9]+)" _ ${version_input})
+
+# Fill version number into package.xml
+configure_file(
+        package.in.xml
+        ${CMAKE_CURRENT_SOURCE_DIR}/package.xml
+        @ONLY
 )
 
 # INSTALL
