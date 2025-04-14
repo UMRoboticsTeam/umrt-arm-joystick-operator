@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(umrt_arm_joystick_operator)
+project(umrt-arm-joystick-operator)
 
 set(CMAKE_CXX_STANDARD 14)
 
@@ -24,7 +24,7 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
-add_executable(${PROJECT_NAME} src/${PROJECT_NAME}.cpp src/joystick_teleop_node.cpp)
+add_executable(${PROJECT_NAME} src/umrt_arm_joystick_operator.cpp src/joystick_teleop_node.cpp)
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 target_include_directories(${PROJECT_NAME} PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
