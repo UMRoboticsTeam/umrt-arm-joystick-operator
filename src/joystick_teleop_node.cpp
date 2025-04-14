@@ -2,7 +2,7 @@
 // Created by Noah on 2024-08-18.
 //
 
-#include "umrt_arm_joystick_operator/joystick_teleop_node.hpp"
+#include "umrt-arm-joystick-operator/joystick_teleop_node.hpp"
 #include <boost/math/special_functions/sign.hpp>
 
 const std_msgs::msg::Float64MultiArray JoystickTeleopNode::ZERO_VEL = std_msgs::msg::Float64MultiArray().set__data({ 0.0, 0.0, 0.0 });
