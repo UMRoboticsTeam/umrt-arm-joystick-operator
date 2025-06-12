@@ -34,5 +34,5 @@ joystick_operator_node:
         gripper_open_button: 0
         gripper_close_button: 1
         axis_z: 3
-        vel_topic: "/diffbot_base_controller/commands"
+        vel_topic: "/arm_base_controller/commands"
         gripper_topic: "/gripper_controller/commands"
