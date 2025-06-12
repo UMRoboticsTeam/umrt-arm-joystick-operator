@@ -26,7 +26,7 @@ public:
         {"axis_x", {0, "Joystick axis corresponding the X axis (int)"}},
         {"axis_y", {1, "Joystick axis corresponding to the Y axis (int)"}},
         {"axis_z", {2, "Joystick axis corresponding to the Z axis (int)"}},
-        {"axis_speed", {20.0, "Speed to move along an axis when the joystick is fully deflected, in motor RPM (double)"}},
+        {"axis_speed", {200.0, "Speed to move along an axis when the joystick is fully deflected, in motor RPM (double)"}},
         {"gripper_speed", {50.0, "Speed to move the gripper at when a button is held, in (% of range)/s (double)"}},
         {"slow_modifier", {0.1, "Multiplier to apply to speeds when the slow button is held (double)"}},
         {"gripper_min", {0.0, "Minimum value to allow gripper to be set to, also used in conjunction with gripper_max to determine the range for gripper_speed (double)"}},
