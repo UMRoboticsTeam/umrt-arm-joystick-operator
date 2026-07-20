@@ -5,8 +5,6 @@
 #include "umrt-arm-joystick-operator/joystick_teleop_node.hpp"
 #include <boost/math/special_functions/sign.hpp>
 
-const std_msgs::msg::Float64MultiArray JoystickTeleopNode::ZERO_VEL = std_msgs::msg::Float64MultiArray().set__data({ 0.0, 0.0, 0.0 });
-
 // Helper functions
 double getAxisValue(const sensor_msgs::msg::Joy::ConstSharedPtr& msg, const size_t axis);
 int getButtonValue(const sensor_msgs::msg::Joy::ConstSharedPtr& msg, const size_t button);
@@ -15,13 +13,11 @@ int getButtonValue(const sensor_msgs::msg::Joy::ConstSharedPtr& msg, const size_
 
 JoystickTeleopNode::JoystickTeleopNode() : Node("joystick_teleop") {
     this->initializeParameters();
-
     this->last_gripper.data = { 0.0 };
-    this->last_vel = ZERO_VEL;
     this->last_time = std::chrono::steady_clock::now();
     this->gripper_moving = false;
 
-    this->vel_publisher = this->create_publisher<std_msgs::msg::Float64MultiArray>(this->vel_topic, JoystickTeleopNode::PUBLISHER_QUEUE_DEPTH);
+    this->servo_twist_publisher = this->create_publisher<geometry_msgs::msg::TwistStamped>(this->servo_twist_topic, JoystickTeleopNode::PUBLISHER_QUEUE_DEPTH);
     this->gripper_publisher = this->create_publisher<std_msgs::msg::Float64MultiArray>(this->gripper_topic, JoystickTeleopNode::PUBLISHER_QUEUE_DEPTH);
     this->joy_subscriber = this->create_subscription<sensor_msgs::msg::Joy>(
             this->joy_topic,
@@ -35,6 +31,7 @@ JoystickTeleopNode::JoystickTeleopNode() : Node("joystick_teleop") {
     this->movement_enabled = false;
 }
 
+
 void JoystickTeleopNode::handleJoy(const sensor_msgs::msg::Joy::ConstSharedPtr& msg) {
     // Check that the deadman switch is engaged
     // Since buttons is an array, we need to check that it is longer than the deadman button index first
@@ -42,15 +39,18 @@ void JoystickTeleopNode::handleJoy(const sensor_msgs::msg::Joy::ConstSharedPtr& 
         // Check if slow-mode enabled
         double multiplier = getButtonValue(msg, this->slow_button) ? this->slow_modifier : 1.0;
 
-        // Construct velocity message
-        // This is simple since we directly map joystick value to joint velocity, and joystick value is already normalized
-        std_msgs::msg::Float64MultiArray vel;
+        // Construct the message (maybe refactor into a function)
+        auto twist = geometry_msgs::msg::TwistStamped();
+        twist.twist.linear.x = getAxisValue(msg, this->axis_x);// * this->axis_speed * multiplier;
+        twist.twist.linear.y = getAxisValue(msg, this->axis_y);// * this->axis_speed * multiplier;
+        twist.twist.linear.z = getAxisValue(msg, this->axis_z);// * this->axis_speed * multiplier;
+        twist.twist.angular.x = 0;
+        twist.twist.angular.y = 0;
+        twist.twist.angular.z = 0;
+        twist.header.frame_id = "base_link";
+        twist.header.stamp = this->get_clock()->now();
+
         std_msgs::msg::Float64MultiArray gripper;
-        vel.data = {
-            getAxisValue(msg, this->axis_x) * this->axis_speed * multiplier,
-            getAxisValue(msg, this->axis_y) * this->axis_speed * multiplier,
-            getAxisValue(msg, this->axis_z) * this->axis_speed * multiplier
-        };
 
         // Calculate new gripper position
         // <0: closing, 0: stopped, >0: opening
@@ -94,25 +94,30 @@ void JoystickTeleopNode::handleJoy(const sensor_msgs::msg::Joy::ConstSharedPtr& 
         }
 
         // Publish the new values
-        this->sendValues(vel, gripper);
+        this->sendValues(twist, gripper);
     } else if (this->movement_enabled) {
         // Deadman switch no longer engaged, stop movement
         this->gripper_moving = false;
-        this->sendValues(ZERO_VEL, this->last_gripper);
+        geometry_msgs::msg::TwistStamped twist;
+        twist.header.frame_id = "base_link";
+        twist.header.stamp = this->get_clock()->now();
+        
+        this->sendValues(twist, this->last_gripper);
         this->movement_enabled = false; // Needs to be after sendValues since that sets movement_enabled = true
     }
 }
 
-void JoystickTeleopNode::sendValues(const std_msgs::msg::Float64MultiArray& vel, const std_msgs::msg::Float64MultiArray& gripper) {
-    this->vel_publisher->publish(vel);
+void JoystickTeleopNode::sendValues(const geometry_msgs::msg::TwistStamped& twist, const std_msgs::msg::Float64MultiArray& gripper) {
+
+    this->servo_twist_publisher->publish(twist);
     this->gripper_publisher->publish(gripper);
 
     this->movement_enabled = true;
-    this->last_vel = vel;
     this->last_gripper = gripper;
 }
 
 void JoystickTeleopNode::initializeParameters() {
+    RCLCPP_INFO(this->get_logger(), "Parameter initialization starting...");
     /*  Regex to apply to parameter list:
             deadman_button
             slow_button
@@ -126,7 +131,7 @@ void JoystickTeleopNode::initializeParameters() {
             slow_modifier
             gripper_min
             gripper_max
-            vel_topic
+            servo_twist_topic
             joy_topic
             gripper_topic
         Find:
@@ -264,14 +269,14 @@ void JoystickTeleopNode::initializeParameters() {
     this->gripper_max = this->get_parameter("gripper_max").as_double();
 
     rcl_interfaces::msg::ParameterDescriptor vel_topic_d;
-    vel_topic_d.name = "vel_topic";
+    vel_topic_d.name = "servo_twist_topic";
     const auto& [vel_topic_default, vel_topic_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(vel_topic_d.name);
     vel_topic_d.description = vel_topic_description;
     vel_topic_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_STRING;
     vel_topic_d.read_only = true;
     vel_topic_d.dynamic_typing = false;
     this->declare_parameter(vel_topic_d.name, boost::get<std::string>(vel_topic_default), vel_topic_d);
-    this->vel_topic = this->get_parameter("vel_topic").as_string();
+    this->servo_twist_topic = this->get_parameter("servo_twist_topic").as_string();
 
     rcl_interfaces::msg::ParameterDescriptor gripper_topic_d;
     gripper_topic_d.name = "gripper_topic";
@@ -292,6 +297,8 @@ void JoystickTeleopNode::initializeParameters() {
     joy_topic_d.dynamic_typing = false;
     this->declare_parameter(joy_topic_d.name, boost::get<std::string>(joy_topic_default), joy_topic_d);
     this->joy_topic = this->get_parameter("joy_topic").as_string();
+
+    RCLCPP_INFO(this->get_logger(), "Parameters initialized!");
 }
 
 double getAxisValue(const sensor_msgs::msg::Joy::ConstSharedPtr& msg, const size_t axis) {

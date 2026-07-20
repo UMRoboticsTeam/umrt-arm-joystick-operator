@@ -15,6 +15,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/joy.hpp"
 #include "std_msgs/msg/float64_multi_array.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
+
 
 class JoystickTeleopNode : public rclcpp::Node {
 public:
@@ -31,25 +33,23 @@ public:
         {"slow_modifier", {0.1, "Multiplier to apply to speeds when the slow button is held (double)"}},
         {"gripper_min", {0.0, "Minimum value to allow gripper to be set to, also used in conjunction with gripper_max to determine the range for gripper_speed (double)"}},
         {"gripper_max", {180.0, "Maximum value to allow gripper to be set to, also used in conjunction with gripper_min to determine the range for gripper_speed (double)"}},
-        {"vel_topic", {"/cmd_vel", "Topic to publish joint speeds to (string)"}},
+        {"servo_twist_topic", {"/servo_node/delta_twist_cmds", "Topic to publish joint speeds to (string)"}},
         {"gripper_topic", {"/gripper_pos", "Topic to publish gripper positions to (string)"}},
         {"joy_topic", {"/joy", "Topic to read Joy messages from (string)"}}
     };
 
     static constexpr int PUBLISHER_QUEUE_DEPTH = 10;
 
-    static const std_msgs::msg::Float64MultiArray ZERO_VEL;
-
     JoystickTeleopNode();
 
-    void sendValues(const std_msgs::msg::Float64MultiArray& vel_values, const std_msgs::msg::Float64MultiArray& gripper_values);
+    void sendValues(const geometry_msgs::msg::TwistStamped& vel_values, const std_msgs::msg::Float64MultiArray& gripper_values);
 
 protected:
     void initializeParameters();
 
     void handleJoy(const sensor_msgs::msg::Joy::ConstSharedPtr& msg);
 
-    rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr vel_publisher;
+    rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr servo_twist_publisher;
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr gripper_publisher;
     rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_subscriber;
 
@@ -66,11 +66,10 @@ protected:
     double slow_modifier;
     double gripper_min;
     double gripper_max;
-    std::string vel_topic;
+    std::string servo_twist_topic;
     std::string gripper_topic;
     std::string joy_topic;
 
-    std_msgs::msg::Float64MultiArray last_vel;
     std_msgs::msg::Float64MultiArray last_gripper;
     std::chrono::steady_clock::time_point last_time;
     bool gripper_moving;

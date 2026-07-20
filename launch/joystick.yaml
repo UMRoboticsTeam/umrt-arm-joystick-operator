@@ -1,38 +1,52 @@
 joy_node:
+  # See documentation https://docs.ros.org/en/humble/p/joy/__README.html#parameters
   ros__parameters:
     device_id: 0
+    device_name: ""
     deadzone: 0.05
     autorepeat_rate: 20.0
-    joy_config: "xbox"
+    sticky_buttons: false
+    coalesce_interval_ms: 1
 
-teleop_node:
-  ros__parameters:
-    
-    axis_linear:  # Left thumb stick vertical
-      x: 1
-    scale_linear:
-      x: 0.5
-    scale_linear_turbo:
-      x: 1.0
 
-    axis_angular:  # Left thumb stick horizontal
-      yaw: 0
-    scale_angular:
-      yaw: 0.5
-    scale_angular_turbo:
-      yaw: 1.0
 
-    gripper_topic: "/go"
-    require_enable_button: true
-    enable_button: 6  # Left shoulder button
-    enable_turbo_button: 7  # Right shoulder button
+
+# teleop_node:
+#   ros__parameters:
+#     axis_linear:  # Left thumb stick vertical
+#       x: 1
+#     scale_linear:
+#       x: 0.5
+#     scale_linear_turbo:
+#       x: 1.0
+#     axis_angular:  # Left thumb stick horizontal
+#       yaw: 0
+#     scale_angular:
+#       yaw: 0.5
+#     scale_angular_turbo:
+#       yaw: 1.0
+#     gripper_topic: "/go"
+#     require_enable_button: true
+#     enable_button: 6  # Left shoulder button
+#     enable_turbo_button: 7  # Right shoulder button
 
 joystick_operator_node:
+    # For button numbers: See documentation for "game_controller_node": https://docs.ros.org/en/humble/p/joy/__README.html#ros-2-driver-for-generic-joysticks-and-game-controllers
+    # NOTE: The button numbers for "joy_node" (also supplied by the joy package) seem unpredictable.
+    # Documentation for other parameters are in joystick_teleop_node.hpp
     ros__parameters:
-        deadman_button: 6 # Left shoulder
-        slow_button: 7 # Right shoulder
-        gripper_open_button: 0
-        gripper_close_button: 1
-        axis_z: 3
-        vel_topic: "/diffbot_base_controller/commands"
+        deadman_button: 9
+        servo_twist_topic: "/servo_node/delta_twist_cmds"
         gripper_topic: "/gripper_controller/commands"
+        joy_topic: "/arm_joy"
+        slow_button: 10
+        slow_modifier: 0.1
+        axis_x: 0
+        axis_y: 1
+        axis_z: 3
+        axis_speed: 20.0
+        gripper_speed: 50.0
+        gripper_min: 0.0
+        gripper_max: 180.0
+        gripper_open_button: 11
+        gripper_close_button: 12
