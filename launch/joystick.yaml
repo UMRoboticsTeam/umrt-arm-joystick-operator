@@ -9,8 +9,6 @@ joy_node:
     coalesce_interval_ms: 1
 
 
-
-
 # teleop_node:
 #   ros__parameters:
 #     axis_linear:  # Left thumb stick vertical
@@ -30,6 +28,7 @@ joy_node:
 #     enable_button: 6  # Left shoulder button
 #     enable_turbo_button: 7  # Right shoulder button
 
+
 joystick_operator_node:
     # For button numbers: See documentation for "game_controller_node": https://docs.ros.org/en/humble/p/joy/__README.html#ros-2-driver-for-generic-joysticks-and-game-controllers
     # NOTE: The button numbers for "joy_node" (also supplied by the joy package) seem unpredictable.
@@ -41,9 +40,12 @@ joystick_operator_node:
         joy_topic: "/arm_joy"
         slow_button: 10
         slow_modifier: 0.1
-        axis_x: 0
-        axis_y: 1
+        axis_x: 1
+        axis_y: 0
         axis_z: 3
+        axis_x_invert: 1
+        axis_y_invert: 1
+        axis_z_invert: 0
         axis_speed: 20.0
         gripper_speed: 50.0
         gripper_min: 0.0

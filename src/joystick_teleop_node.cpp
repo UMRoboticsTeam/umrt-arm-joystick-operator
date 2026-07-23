@@ -50,6 +50,18 @@ void JoystickTeleopNode::handleJoy(const sensor_msgs::msg::Joy::ConstSharedPtr& 
         twist.header.frame_id = "base_link";
         twist.header.stamp = this->get_clock()->now();
 
+        if (this->axis_x_invert) {
+            twist.twist.linear.x *= -1;
+        }
+
+        if (this->axis_y_invert) {
+            twist.twist.linear.y *= -1;
+        }
+        
+        if (this->axis_z_invert) {
+            twist.twist.linear.z *= -1;
+        }
+
         std_msgs::msg::Float64MultiArray gripper;
 
         // Calculate new gripper position
@@ -126,6 +138,9 @@ void JoystickTeleopNode::initializeParameters() {
             axis_x
             axis_y
             axis_z
+            axis_x_invert
+            axis_y_invert
+            axis_z_invert
             axis_speed
             gripper_speed
             slow_modifier
@@ -217,6 +232,36 @@ void JoystickTeleopNode::initializeParameters() {
     axis_z_d.dynamic_typing = false;
     this->declare_parameter(axis_z_d.name, boost::get<int>(axis_z_default), axis_z_d);
     this->axis_z = this->get_parameter("axis_z").as_int();
+    
+    rcl_interfaces::msg::ParameterDescriptor axis_x_invert_d;
+    axis_x_invert_d.name = "axis_x_invert";
+    const auto& [axis_x_invert_default, axis_x_invert_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(axis_x_invert_d.name);
+    axis_x_invert_d.description = axis_x_invert_description;
+    axis_x_invert_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
+    axis_x_invert_d.read_only = true;
+    axis_x_invert_d.dynamic_typing = false;
+    this->declare_parameter(axis_x_invert_d.name, boost::get<int>(axis_x_invert_default), axis_x_invert_d);
+    this->axis_x_invert = this->get_parameter("axis_x_invert").as_int(); // a bit hacky but its OK :)
+
+    rcl_interfaces::msg::ParameterDescriptor axis_y_invert_d;
+    axis_y_invert_d.name = "axis_y_invert";
+    const auto& [axis_y_invert_default, axis_y_invert_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(axis_y_invert_d.name);
+    axis_y_invert_d.description = axis_y_invert_description;
+    axis_y_invert_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
+    axis_y_invert_d.read_only = true;
+    axis_y_invert_d.dynamic_typing = false;
+    this->declare_parameter(axis_y_invert_d.name, boost::get<int>(axis_y_invert_default), axis_y_invert_d);
+    this->axis_y_invert = this->get_parameter("axis_y_invert").as_int(); // a bit hacky but its OK :)
+
+    rcl_interfaces::msg::ParameterDescriptor axis_z_invert_d;
+    axis_z_invert_d.name = "axis_z_invert";
+    const auto& [axis_z_invert_default, axis_z_invert_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(axis_z_invert_d.name);
+    axis_z_invert_d.description = axis_z_invert_description;
+    axis_z_invert_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
+    axis_z_invert_d.read_only = true;
+    axis_z_invert_d.dynamic_typing = false;
+    this->declare_parameter(axis_z_invert_d.name, boost::get<int>(axis_z_invert_default), axis_z_invert_d);
+    this->axis_z_invert = (bool)this->get_parameter("axis_z_invert").as_int(); // a bit hacky but its OK :)
 
     rcl_interfaces::msg::ParameterDescriptor axis_speed_d;
     axis_speed_d.name = "axis_speed";

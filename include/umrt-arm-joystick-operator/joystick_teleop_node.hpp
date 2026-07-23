@@ -28,6 +28,9 @@ public:
         {"axis_x", {0, "Joystick axis corresponding the X axis (int)"}},
         {"axis_y", {1, "Joystick axis corresponding to the Y axis (int)"}},
         {"axis_z", {2, "Joystick axis corresponding to the Z axis (int)"}},
+        {"axis_x_invert", {0, "Invert the joystick values corresponding to the X axis (bool)"}},
+        {"axis_y_invert", {0, "Invert the joystick values corresponding to the Y axis (bool)"}},
+        {"axis_z_invert", {0, "Invert the joystick values corresponding to the Z axis (bool)"}},
         {"axis_speed", {20.0, "Speed to move along an axis when the joystick is fully deflected, in motor RPM (double)"}},
         {"gripper_speed", {50.0, "Speed to move the gripper at when a button is held, in (% of range)/s (double)"}},
         {"slow_modifier", {0.1, "Multiplier to apply to speeds when the slow button is held (double)"}},
@@ -61,6 +64,9 @@ protected:
     size_t axis_x;
     size_t axis_y;
     size_t axis_z;
+    bool axis_x_invert;
+    bool axis_y_invert;
+    bool axis_z_invert;
     double axis_speed;
     double gripper_speed;
     double slow_modifier;
