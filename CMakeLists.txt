@@ -15,6 +15,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
         rclcpp
         rclcpp_lifecycle
         std_msgs
+        geometry_msgs
         sensor_msgs
         )
 
