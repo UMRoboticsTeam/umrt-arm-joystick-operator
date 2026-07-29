@@ -8,6 +8,7 @@
 // Helper functions
 double getAxisValue(const sensor_msgs::msg::Joy::ConstSharedPtr& msg, const size_t axis);
 int getButtonValue(const sensor_msgs::msg::Joy::ConstSharedPtr& msg, const size_t button);
+double getButtonsAsAxisValue(const sensor_msgs::msg::Joy::ConstSharedPtr& msg, const size_t positive_button, const size_t negative_button);
 
 #define SGN(x)
 
@@ -354,4 +355,9 @@ double getAxisValue(const sensor_msgs::msg::Joy::ConstSharedPtr& msg, const size
 int getButtonValue(const sensor_msgs::msg::Joy::ConstSharedPtr& msg, const size_t button) {
     // Ensure button exists, return 0 if not. Note button is size_t so always >= 0
     return (msg->buttons.size() > button) ? msg->buttons[button] : 0;
+}
+
+double getButtonsAsAxisValue(const sensor_msgs::msg::Joy::ConstSharedPtr& msg, const size_t positive_button, const size_t negative_button) {
+    // Ensure buttons exists, return 0 if not. Note button is size_t so always >= 0
+    return (msg->buttons.size() > positive_button && msg->buttons.size() > negative_button) ? (double)(msg->buttons[positive_button]-msg->buttons[negative_button]) : 0.0;
 }
