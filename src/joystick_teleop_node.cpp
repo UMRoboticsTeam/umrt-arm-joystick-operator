@@ -132,36 +132,40 @@ void JoystickTeleopNode::sendValues(const geometry_msgs::msg::TwistStamped& twis
 void JoystickTeleopNode::initializeParameters() {
     RCLCPP_INFO(this->get_logger(), "Parameter initialization starting...");
     /*  Regex to apply to parameter list:
-            deadman_button
-            slow_button
-            gripper_open_button
-            gripper_close_button
-            axis_x
-            axis_y
-            axis_z
-            axis_x_invert
-            axis_y_invert
-            axis_z_invert
-            axis_speed
-            gripper_speed
-            slow_modifier
-            gripper_min
-            gripper_max
-            servo_twist_topic
-            joy_topic
-            gripper_topic
+            YAML_NAME                   CPP_NAME                PARAM_TYPE  CAST_TYPE   AS_TYPE
+            deadman_button              deadman_button          INTEGER     int         int
+            slow_button                 slow_button             INTEGER     int         int
+            gripper.open_button         gripper_open_button     INTEGER     int         int
+            gripper.close_button        gripper_close_button    INTEGER     int         int
+            wrist_buttons.pitch_up      wrist_pitch_up_button   INTEGER     int         int
+            wrist_buttons.pitch_down    wrist_pitch_down_button INTEGER     int         int
+            wrist_buttons.roll_left     wrist_roll_left_button  INTEGER     int         int
+            wrist_buttons.roll_right    wrist_roll_right_button INTEGER     int         int
+            axis_x.joystick_axis        axis_x_joystick_axis    INTEGER     int         int
+            axis_y.joystick_axis        axis_y_joystick_axis    INTEGER     int         int
+            axis_z.joystick_axis        axis_z_joystick_axis    INTEGER     int         int
+            axis_x.invert               axis_x_invert           INTEGER     int         int
+            axis_y.invert               axis_y_invert           INTEGER     int         int
+            axis_z.invert               axis_z_invert           INTEGER     int         int
+            gripper.speed               gripper_speed           DOUBLE      double      double
+            slow_modifier               slow_modifier           DOUBLE      double      double
+            gripper.min                 gripper_min             DOUBLE      double      double
+            gripper.max                 gripper_max             DOUBLE      double      double
+            servo_twist_topic           servo_twist_topic       STRING      std::string string
+            joy_topic                   joy_topic               STRING      std::string string
+            gripper_topic               gripper_topic           STRING      std::string string
         Find:
-            \s*(\w+)$
+            ^\s*([\.\w]+)\s+(\w+)\s+(\w+)\s+([\w:]+)\s+(\w+)$
         Replace:
-            rcl_interfaces::msg::ParameterDescriptor $1_d;
-            $1_d.name = "$1";
-            const auto& [$1_default, $1_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at\($1_d.name\);
-            $1_d.description = $1_description;
-            $1_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_;
-            $1_d.read_only = true;
-            $1_d.dynamic_typing = false;
-            this->declare_parameter\($1_d.name, boost::get<???>\($1_default\), $1_d\);
-            this->$1 = this->get_parameter\("$1"\).as_;\n
+            rcl_interfaces::msg::ParameterDescriptor $2_d;
+            $2_d.name = "$1";
+            const auto& [$2_default, $2_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at($2_d.name);
+            $2_d.description = $2_description;
+            $2_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_$3;
+            $2_d.read_only = true;
+            $2_d.dynamic_typing = false;
+            this->declare_parameter($2_d.name, boost::get<$4>($2_default), $2_d);
+            this->$2 = this->get_parameter("$1").as_$5();\n
      */
 
     rcl_interfaces::msg::ParameterDescriptor deadman_button_d;
@@ -185,104 +189,134 @@ void JoystickTeleopNode::initializeParameters() {
     this->slow_button = this->get_parameter("slow_button").as_int();
 
     rcl_interfaces::msg::ParameterDescriptor gripper_open_button_d;
-    gripper_open_button_d.name = "gripper_open_button";
+    gripper_open_button_d.name = "gripper.open_button";
     const auto& [gripper_open_button_default, gripper_open_button_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(gripper_open_button_d.name);
     gripper_open_button_d.description = gripper_open_button_description;
     gripper_open_button_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
     gripper_open_button_d.read_only = true;
     gripper_open_button_d.dynamic_typing = false;
     this->declare_parameter(gripper_open_button_d.name, boost::get<int>(gripper_open_button_default), gripper_open_button_d);
-    this->gripper_open_button = this->get_parameter("gripper_open_button").as_int();
+    this->gripper_open_button = this->get_parameter("gripper.open_button").as_int();
 
     rcl_interfaces::msg::ParameterDescriptor gripper_close_button_d;
-    gripper_close_button_d.name = "gripper_close_button";
+    gripper_close_button_d.name = "gripper.close_button";
     const auto& [gripper_close_button_default, gripper_close_button_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(gripper_close_button_d.name);
     gripper_close_button_d.description = gripper_close_button_description;
     gripper_close_button_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
     gripper_close_button_d.read_only = true;
     gripper_close_button_d.dynamic_typing = false;
     this->declare_parameter(gripper_close_button_d.name, boost::get<int>(gripper_close_button_default), gripper_close_button_d);
-    this->gripper_close_button = this->get_parameter("gripper_close_button").as_int();
+    this->gripper_close_button = this->get_parameter("gripper.close_button").as_int();
 
-    rcl_interfaces::msg::ParameterDescriptor axis_x_d;
-    axis_x_d.name = "axis_x";
-    const auto& [axis_x_default, axis_x_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(axis_x_d.name);
-    axis_x_d.description = axis_x_description;
-    axis_x_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
-    axis_x_d.read_only = true;
-    axis_x_d.dynamic_typing = false;
-    this->declare_parameter(axis_x_d.name, boost::get<int>(axis_x_default), axis_x_d);
-    this->axis_x = this->get_parameter("axis_x").as_int();
+    rcl_interfaces::msg::ParameterDescriptor wrist_pitch_up_button_d;
+    wrist_pitch_up_button_d.name = "wrist_buttons.pitch_up";
+    const auto& [wrist_pitch_up_button_default, wrist_pitch_up_button_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(wrist_pitch_up_button_d.name);
+    wrist_pitch_up_button_d.description = wrist_pitch_up_button_description;
+    wrist_pitch_up_button_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
+    wrist_pitch_up_button_d.read_only = true;
+    wrist_pitch_up_button_d.dynamic_typing = false;
+    this->declare_parameter(wrist_pitch_up_button_d.name, boost::get<int>(wrist_pitch_up_button_default), wrist_pitch_up_button_d);
+    this->wrist_pitch_up_button = this->get_parameter("wrist_buttons.pitch_up").as_int();
 
-    rcl_interfaces::msg::ParameterDescriptor axis_y_d;
-    axis_y_d.name = "axis_y";
-    const auto& [axis_y_default, axis_y_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(axis_y_d.name);
-    axis_y_d.description = axis_y_description;
-    axis_y_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
-    axis_y_d.read_only = true;
-    axis_y_d.dynamic_typing = false;
-    this->declare_parameter(axis_y_d.name, boost::get<int>(axis_y_default), axis_y_d);
-    this->axis_y = this->get_parameter("axis_y").as_int();
+    rcl_interfaces::msg::ParameterDescriptor wrist_pitch_down_button_d;
+    wrist_pitch_down_button_d.name = "wrist_buttons.pitch_down";
+    const auto& [wrist_pitch_down_button_default, wrist_pitch_down_button_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(wrist_pitch_down_button_d.name);
+    wrist_pitch_down_button_d.description = wrist_pitch_down_button_description;
+    wrist_pitch_down_button_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
+    wrist_pitch_down_button_d.read_only = true;
+    wrist_pitch_down_button_d.dynamic_typing = false;
+    this->declare_parameter(wrist_pitch_down_button_d.name, boost::get<int>(wrist_pitch_down_button_default), wrist_pitch_down_button_d);
+    this->wrist_pitch_down_button = this->get_parameter("wrist_buttons.pitch_down").as_int();
 
-    rcl_interfaces::msg::ParameterDescriptor axis_z_d;
-    axis_z_d.name = "axis_z";
-    const auto& [axis_z_default, axis_z_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(axis_z_d.name);
-    axis_z_d.description = axis_z_description;
-    axis_z_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
-    axis_z_d.read_only = true;
-    axis_z_d.dynamic_typing = false;
-    this->declare_parameter(axis_z_d.name, boost::get<int>(axis_z_default), axis_z_d);
-    this->axis_z = this->get_parameter("axis_z").as_int();
+    rcl_interfaces::msg::ParameterDescriptor wrist_roll_left_button_d;
+    wrist_roll_left_button_d.name = "wrist_buttons.roll_left";
+    const auto& [wrist_roll_left_button_default, wrist_roll_left_button_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(wrist_roll_left_button_d.name);
+    wrist_roll_left_button_d.description = wrist_roll_left_button_description;
+    wrist_roll_left_button_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
+    wrist_roll_left_button_d.read_only = true;
+    wrist_roll_left_button_d.dynamic_typing = false;
+    this->declare_parameter(wrist_roll_left_button_d.name, boost::get<int>(wrist_roll_left_button_default), wrist_roll_left_button_d);
+    this->wrist_roll_left_button = this->get_parameter("wrist_buttons.roll_left").as_int();
+
+    rcl_interfaces::msg::ParameterDescriptor wrist_roll_right_button_d;
+    wrist_roll_right_button_d.name = "wrist_buttons.roll_right";
+    const auto& [wrist_roll_right_button_default, wrist_roll_right_button_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(wrist_roll_right_button_d.name);
+    wrist_roll_right_button_d.description = wrist_roll_right_button_description;
+    wrist_roll_right_button_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
+    wrist_roll_right_button_d.read_only = true;
+    wrist_roll_right_button_d.dynamic_typing = false;
+    this->declare_parameter(wrist_roll_right_button_d.name, boost::get<int>(wrist_roll_right_button_default), wrist_roll_right_button_d);
+    this->wrist_roll_right_button = this->get_parameter("wrist_buttons.roll_right").as_int();
+
+    rcl_interfaces::msg::ParameterDescriptor axis_x_joystick_axis_d;
+    axis_x_joystick_axis_d.name = "axis_x.joystick_axis";
+    const auto& [axis_x_joystick_axis_default, axis_x_joystick_axis_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(axis_x_joystick_axis_d.name);
+    axis_x_joystick_axis_d.description = axis_x_joystick_axis_description;
+    axis_x_joystick_axis_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
+    axis_x_joystick_axis_d.read_only = true;
+    axis_x_joystick_axis_d.dynamic_typing = false;
+    this->declare_parameter(axis_x_joystick_axis_d.name, boost::get<int>(axis_x_joystick_axis_default), axis_x_joystick_axis_d);
+    this->axis_x_joystick_axis = this->get_parameter("axis_x.joystick_axis").as_int();
+
+    rcl_interfaces::msg::ParameterDescriptor axis_y_joystick_axis_d;
+    axis_y_joystick_axis_d.name = "axis_y.joystick_axis";
+    const auto& [axis_y_joystick_axis_default, axis_y_joystick_axis_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(axis_y_joystick_axis_d.name);
+    axis_y_joystick_axis_d.description = axis_y_joystick_axis_description;
+    axis_y_joystick_axis_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
+    axis_y_joystick_axis_d.read_only = true;
+    axis_y_joystick_axis_d.dynamic_typing = false;
+    this->declare_parameter(axis_y_joystick_axis_d.name, boost::get<int>(axis_y_joystick_axis_default), axis_y_joystick_axis_d);
+    this->axis_y_joystick_axis = this->get_parameter("axis_y.joystick_axis").as_int();
+
+    rcl_interfaces::msg::ParameterDescriptor axis_z_joystick_axis_d;
+    axis_z_joystick_axis_d.name = "axis_z.joystick_axis";
+    const auto& [axis_z_joystick_axis_default, axis_z_joystick_axis_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(axis_z_joystick_axis_d.name);
+    axis_z_joystick_axis_d.description = axis_z_joystick_axis_description;
+    axis_z_joystick_axis_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
+    axis_z_joystick_axis_d.read_only = true;
+    axis_z_joystick_axis_d.dynamic_typing = false;
+    this->declare_parameter(axis_z_joystick_axis_d.name, boost::get<int>(axis_z_joystick_axis_default), axis_z_joystick_axis_d);
+    this->axis_z_joystick_axis = this->get_parameter("axis_z.joystick_axis").as_int();
     
     rcl_interfaces::msg::ParameterDescriptor axis_x_invert_d;
-    axis_x_invert_d.name = "axis_x_invert";
+    axis_x_invert_d.name = "axis_x.invert";
     const auto& [axis_x_invert_default, axis_x_invert_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(axis_x_invert_d.name);
     axis_x_invert_d.description = axis_x_invert_description;
     axis_x_invert_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
     axis_x_invert_d.read_only = true;
     axis_x_invert_d.dynamic_typing = false;
     this->declare_parameter(axis_x_invert_d.name, boost::get<int>(axis_x_invert_default), axis_x_invert_d);
-    this->axis_x_invert = this->get_parameter("axis_x_invert").as_int(); // a bit hacky but its OK :)
+    this->axis_x_invert = this->get_parameter("axis_x.invert").as_int();
 
     rcl_interfaces::msg::ParameterDescriptor axis_y_invert_d;
-    axis_y_invert_d.name = "axis_y_invert";
+    axis_y_invert_d.name = "axis_y.invert";
     const auto& [axis_y_invert_default, axis_y_invert_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(axis_y_invert_d.name);
     axis_y_invert_d.description = axis_y_invert_description;
     axis_y_invert_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
     axis_y_invert_d.read_only = true;
     axis_y_invert_d.dynamic_typing = false;
     this->declare_parameter(axis_y_invert_d.name, boost::get<int>(axis_y_invert_default), axis_y_invert_d);
-    this->axis_y_invert = this->get_parameter("axis_y_invert").as_int(); // a bit hacky but its OK :)
+    this->axis_y_invert = this->get_parameter("axis_y.invert").as_int();
 
     rcl_interfaces::msg::ParameterDescriptor axis_z_invert_d;
-    axis_z_invert_d.name = "axis_z_invert";
+    axis_z_invert_d.name = "axis_z.invert";
     const auto& [axis_z_invert_default, axis_z_invert_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(axis_z_invert_d.name);
     axis_z_invert_d.description = axis_z_invert_description;
     axis_z_invert_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER;
     axis_z_invert_d.read_only = true;
     axis_z_invert_d.dynamic_typing = false;
     this->declare_parameter(axis_z_invert_d.name, boost::get<int>(axis_z_invert_default), axis_z_invert_d);
-    this->axis_z_invert = (bool)this->get_parameter("axis_z_invert").as_int(); // a bit hacky but its OK :)
-
-    rcl_interfaces::msg::ParameterDescriptor axis_speed_d;
-    axis_speed_d.name = "axis_speed";
-    const auto& [axis_speed_default, axis_speed_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(axis_speed_d.name);
-    axis_speed_d.description = axis_speed_description;
-    axis_speed_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE;
-    axis_speed_d.read_only = true;
-    axis_speed_d.dynamic_typing = false;
-    this->declare_parameter(axis_speed_d.name, boost::get<double>(axis_speed_default), axis_speed_d);
-    this->axis_speed = this->get_parameter("axis_speed").as_double();
+    this->axis_z_invert = this->get_parameter("axis_z.invert").as_int();
 
     rcl_interfaces::msg::ParameterDescriptor gripper_speed_d;
-    gripper_speed_d.name = "gripper_speed";
+    gripper_speed_d.name = "gripper.speed";
     const auto& [gripper_speed_default, gripper_speed_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(gripper_speed_d.name);
     gripper_speed_d.description = gripper_speed_description;
     gripper_speed_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE;
     gripper_speed_d.read_only = true;
     gripper_speed_d.dynamic_typing = false;
     this->declare_parameter(gripper_speed_d.name, boost::get<double>(gripper_speed_default), gripper_speed_d);
-    this->gripper_speed = this->get_parameter("gripper_speed").as_double();
+    this->gripper_speed = this->get_parameter("gripper.speed").as_double();
 
     rcl_interfaces::msg::ParameterDescriptor slow_modifier_d;
     slow_modifier_d.name = "slow_modifier";
@@ -295,44 +329,34 @@ void JoystickTeleopNode::initializeParameters() {
     this->slow_modifier = this->get_parameter("slow_modifier").as_double();
 
     rcl_interfaces::msg::ParameterDescriptor gripper_min_d;
-    gripper_min_d.name = "gripper_min";
+    gripper_min_d.name = "gripper.min";
     const auto& [gripper_min_default, gripper_min_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(gripper_min_d.name);
     gripper_min_d.description = gripper_min_description;
     gripper_min_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE;
     gripper_min_d.read_only = true;
     gripper_min_d.dynamic_typing = false;
     this->declare_parameter(gripper_min_d.name, boost::get<double>(gripper_min_default), gripper_min_d);
-    this->gripper_min = this->get_parameter("gripper_min").as_double();
+    this->gripper_min = this->get_parameter("gripper.min").as_double();
 
     rcl_interfaces::msg::ParameterDescriptor gripper_max_d;
-    gripper_max_d.name = "gripper_max";
+    gripper_max_d.name = "gripper.max";
     const auto& [gripper_max_default, gripper_max_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(gripper_max_d.name);
     gripper_max_d.description = gripper_max_description;
     gripper_max_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE;
     gripper_max_d.read_only = true;
     gripper_max_d.dynamic_typing = false;
     this->declare_parameter(gripper_max_d.name, boost::get<double>(gripper_max_default), gripper_max_d);
-    this->gripper_max = this->get_parameter("gripper_max").as_double();
+    this->gripper_max = this->get_parameter("gripper.max").as_double();
 
-    rcl_interfaces::msg::ParameterDescriptor vel_topic_d;
-    vel_topic_d.name = "servo_twist_topic";
-    const auto& [vel_topic_default, vel_topic_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(vel_topic_d.name);
-    vel_topic_d.description = vel_topic_description;
-    vel_topic_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_STRING;
-    vel_topic_d.read_only = true;
-    vel_topic_d.dynamic_typing = false;
-    this->declare_parameter(vel_topic_d.name, boost::get<std::string>(vel_topic_default), vel_topic_d);
+    rcl_interfaces::msg::ParameterDescriptor servo_twist_topic_d;
+    servo_twist_topic_d.name = "servo_twist_topic";
+    const auto& [servo_twist_topic_default, servo_twist_topic_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(servo_twist_topic_d.name);
+    servo_twist_topic_d.description = servo_twist_topic_description;
+    servo_twist_topic_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_STRING;
+    servo_twist_topic_d.read_only = true;
+    servo_twist_topic_d.dynamic_typing = false;
+    this->declare_parameter(servo_twist_topic_d.name, boost::get<std::string>(servo_twist_topic_default), servo_twist_topic_d);
     this->servo_twist_topic = this->get_parameter("servo_twist_topic").as_string();
-
-    rcl_interfaces::msg::ParameterDescriptor gripper_topic_d;
-    gripper_topic_d.name = "gripper_topic";
-    const auto& [gripper_topic_default, gripper_topic_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(gripper_topic_d.name);
-    gripper_topic_d.description = gripper_topic_description;
-    gripper_topic_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_STRING;
-    gripper_topic_d.read_only = true;
-    gripper_topic_d.dynamic_typing = false;
-    this->declare_parameter(gripper_topic_d.name, boost::get<std::string>(gripper_topic_default), gripper_topic_d);
-    this->gripper_topic = this->get_parameter("gripper_topic").as_string();
 
     rcl_interfaces::msg::ParameterDescriptor joy_topic_d;
     joy_topic_d.name = "joy_topic";
@@ -343,6 +367,16 @@ void JoystickTeleopNode::initializeParameters() {
     joy_topic_d.dynamic_typing = false;
     this->declare_parameter(joy_topic_d.name, boost::get<std::string>(joy_topic_default), joy_topic_d);
     this->joy_topic = this->get_parameter("joy_topic").as_string();
+
+    rcl_interfaces::msg::ParameterDescriptor gripper_topic_d;
+    gripper_topic_d.name = "gripper_topic";
+    const auto& [gripper_topic_default, gripper_topic_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(gripper_topic_d.name);
+    gripper_topic_d.description = gripper_topic_description;
+    gripper_topic_d.type = rcl_interfaces::msg::ParameterType::PARAMETER_STRING;
+    gripper_topic_d.read_only = true;
+    gripper_topic_d.dynamic_typing = false;
+    this->declare_parameter(gripper_topic_d.name, boost::get<std::string>(gripper_topic_default), gripper_topic_d);
+    this->gripper_topic = this->get_parameter("gripper_topic").as_string();
 
     RCLCPP_INFO(this->get_logger(), "Parameters initialized!");
 }
