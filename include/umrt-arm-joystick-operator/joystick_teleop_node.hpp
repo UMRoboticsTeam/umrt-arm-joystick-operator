@@ -48,7 +48,7 @@ public:
 
     JoystickTeleopNode();
 
-    void sendValues(const geometry_msgs::msg::TwistStamped& vel_values, const std_msgs::msg::Float64MultiArray& gripper_values);
+    void sendValues(const geometry_msgs::msg::TwistStamped& twist1, const geometry_msgs::msg::TwistStamped& twist2, const std_msgs::msg::Float64MultiArray& gripper_values);
 
 protected:
     void initializeParameters();

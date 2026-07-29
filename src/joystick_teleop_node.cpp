@@ -42,15 +42,19 @@ void JoystickTeleopNode::handleJoy(const sensor_msgs::msg::Joy::ConstSharedPtr& 
 
         // Construct the message (maybe refactor into a function)
         auto twist = geometry_msgs::msg::TwistStamped();
-        twist.twist.linear.x = getAxisValue(msg, this->axis_x);// * this->axis_speed * multiplier;
-        twist.twist.linear.y = getAxisValue(msg, this->axis_y);// * this->axis_speed * multiplier;
-        twist.twist.linear.z = getAxisValue(msg, this->axis_z);// * this->axis_speed * multiplier;
-        twist.twist.angular.x = 0;
-        twist.twist.angular.y = 0;
-        twist.twist.angular.z = 0;
+        auto twist_wrs = geometry_msgs::msg::TwistStamped();
+        twist.twist.linear.x = getAxisValue(msg, this->axis_x_joystick_axis);// * this->axis_speed * multiplier;
+        twist.twist.linear.y = getAxisValue(msg, this->axis_y_joystick_axis);// * this->axis_speed * multiplier;
+        twist.twist.linear.z = getAxisValue(msg, this->axis_z_joystick_axis);// * this->axis_speed * multiplier;
+        twist_wrs.twist.angular.x = getButtonsAsAxisValue(msg, this->wrist_pitch_up_button, this->wrist_pitch_down_button);
+        twist_wrs.twist.angular.y = getButtonsAsAxisValue(msg, this->wrist_pitch_up_button, this->wrist_pitch_down_button);
+        twist_wrs.twist.angular.z = getButtonsAsAxisValue(msg, this->wrist_pitch_up_button, this->wrist_pitch_down_button);
         twist.header.frame_id = "base_link";
+        twist_wrs.header.frame_id = "wrist_link";
         twist.header.stamp = this->get_clock()->now();
+        twist_wrs.header.stamp = twist.header.stamp;
 
+        // invert axes
         if (this->axis_x_invert) {
             twist.twist.linear.x *= -1;
         }
@@ -58,7 +62,7 @@ void JoystickTeleopNode::handleJoy(const sensor_msgs::msg::Joy::ConstSharedPtr& 
         if (this->axis_y_invert) {
             twist.twist.linear.y *= -1;
         }
-        
+
         if (this->axis_z_invert) {
             twist.twist.linear.z *= -1;
         }
@@ -107,22 +111,27 @@ void JoystickTeleopNode::handleJoy(const sensor_msgs::msg::Joy::ConstSharedPtr& 
         }
 
         // Publish the new values
-        this->sendValues(twist, gripper);
+        this->sendValues(twist, twist_wrs, gripper);
     } else if (this->movement_enabled) {
         // Deadman switch no longer engaged, stop movement
         this->gripper_moving = false;
-        geometry_msgs::msg::TwistStamped twist;
-        twist.header.frame_id = "base_link";
-        twist.header.stamp = this->get_clock()->now();
+        geometry_msgs::msg::TwistStamped twist1;
+        geometry_msgs::msg::TwistStamped twist2;
+        twist1.header.frame_id = "base_link";
+        twist1.header.stamp = this->get_clock()->now();
         
-        this->sendValues(twist, this->last_gripper);
+        twist2.header.frame_id = "wrist_link";
+        twist2.header.stamp = twist1.header.stamp;
+        
+        this->sendValues(twist1, twist2, this->last_gripper);
         this->movement_enabled = false; // Needs to be after sendValues since that sets movement_enabled = true
     }
 }
 
-void JoystickTeleopNode::sendValues(const geometry_msgs::msg::TwistStamped& twist, const std_msgs::msg::Float64MultiArray& gripper) {
+void JoystickTeleopNode::sendValues(const geometry_msgs::msg::TwistStamped& twist1, const geometry_msgs::msg::TwistStamped& twist2, const std_msgs::msg::Float64MultiArray& gripper) {
 
-    this->servo_twist_publisher->publish(twist);
+    this->servo_twist_publisher->publish(twist1);
+    this->servo_twist_publisher->publish(twist2);
     this->gripper_publisher->publish(gripper);
 
     this->movement_enabled = true;
@@ -277,7 +286,7 @@ void JoystickTeleopNode::initializeParameters() {
     axis_z_joystick_axis_d.dynamic_typing = false;
     this->declare_parameter(axis_z_joystick_axis_d.name, boost::get<int>(axis_z_joystick_axis_default), axis_z_joystick_axis_d);
     this->axis_z_joystick_axis = this->get_parameter("axis_z.joystick_axis").as_int();
-    
+
     rcl_interfaces::msg::ParameterDescriptor axis_x_invert_d;
     axis_x_invert_d.name = "axis_x.invert";
     const auto& [axis_x_invert_default, axis_x_invert_description] = JoystickTeleopNode::DEFAULT_PARAMETERS.at(axis_x_invert_d.name);
