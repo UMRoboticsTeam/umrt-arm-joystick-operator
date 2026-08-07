@@ -17,6 +17,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
         std_msgs
         geometry_msgs
         sensor_msgs
+        ament_cmake_python
         )
 
 # find dependencies
@@ -56,6 +57,11 @@ install(TARGETS
 install(
         DIRECTORY launch
         DESTINATION share/${PROJECT_NAME}/
+)
+install(
+        PROGRAMS src/can_ppm_babbler.py
+        DESTINATION lib/${PROJECT_NAME}
+        RENAME can_ppm_babbler
 )
 
 ament_package()

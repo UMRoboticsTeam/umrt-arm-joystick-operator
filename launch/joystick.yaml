@@ -36,8 +36,8 @@ joystick_operator_node:
     ros__parameters:
         deadman_button: 9
         servo_twist_topic: "/servo_node/delta_twist_cmds"
-        gripper_topic: "/gripper_controller/commands"
-        joy_topic: "/arm_joy"
+        gripper_topic: "/ppm/gripper/ch0/command"
+        joy_topic: "/arm/joy"
         # TODO: Make base_frame_id and wrist_frame_id actually change the strings sent.
         base_frame_id: base_link
         wrist_frame_id: wrist_link
@@ -63,3 +63,12 @@ joystick_operator_node:
           pitch_down: 12
           roll_left: 13
           roll_right: 14
+
+
+gripper_ppm_node:
+  ros__parameters:
+    babbler_prefix: /arm/babbler
+    ppm_prefix: /arm/ppm
+    name: gripper
+    src_addr: 99
+    babbler_servo_id: 1

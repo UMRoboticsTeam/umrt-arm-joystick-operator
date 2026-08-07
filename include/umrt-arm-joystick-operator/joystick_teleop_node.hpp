@@ -48,7 +48,7 @@ public:
 
     JoystickTeleopNode();
 
-    void sendValues(const geometry_msgs::msg::TwistStamped& twist1, const geometry_msgs::msg::TwistStamped& twist2, const std_msgs::msg::Float64MultiArray& gripper_values);
+    void sendValues(const geometry_msgs::msg::TwistStamped& twist1, const geometry_msgs::msg::TwistStamped& twist2, const geometry_msgs::msg::TwistStamped& twist_gripper, const std_msgs::msg::Float64MultiArray& gripper_values, bool allow_zero);
 
 protected:
     void initializeParameters();
@@ -56,6 +56,7 @@ protected:
     void handleJoy(const sensor_msgs::msg::Joy::ConstSharedPtr& msg);
 
     rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr servo_twist_publisher;
+    rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr servo_twist_gripper_publisher;
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr gripper_publisher;
     rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_subscriber;
 

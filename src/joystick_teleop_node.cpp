@@ -19,6 +19,8 @@ JoystickTeleopNode::JoystickTeleopNode() : Node("joystick_teleop") {
     this->gripper_moving = false;
 
     this->servo_twist_publisher = this->create_publisher<geometry_msgs::msg::TwistStamped>(this->servo_twist_topic, JoystickTeleopNode::PUBLISHER_QUEUE_DEPTH);
+    // TODO: Add a parameter for gripper servo topic
+    this->servo_twist_gripper_publisher = this->create_publisher<geometry_msgs::msg::TwistStamped>("/servo_node_gripper/delta_twist_cmds", JoystickTeleopNode::PUBLISHER_QUEUE_DEPTH);
     this->gripper_publisher = this->create_publisher<std_msgs::msg::Float64MultiArray>(this->gripper_topic, JoystickTeleopNode::PUBLISHER_QUEUE_DEPTH);
     this->joy_subscriber = this->create_subscription<sensor_msgs::msg::Joy>(
             this->joy_topic,
@@ -41,30 +43,32 @@ void JoystickTeleopNode::handleJoy(const sensor_msgs::msg::Joy::ConstSharedPtr& 
         double multiplier = getButtonValue(msg, this->slow_button) ? this->slow_modifier : 1.0;
 
         // Construct the message (maybe refactor into a function)
-        auto twist = geometry_msgs::msg::TwistStamped();
-        auto twist_wrs = geometry_msgs::msg::TwistStamped();
-        twist.twist.linear.x = getAxisValue(msg, this->axis_x_joystick_axis);// * this->axis_speed * multiplier;
-        twist.twist.linear.y = getAxisValue(msg, this->axis_y_joystick_axis);// * this->axis_speed * multiplier;
-        twist.twist.linear.z = getAxisValue(msg, this->axis_z_joystick_axis);// * this->axis_speed * multiplier;
-        twist_wrs.twist.angular.x = getButtonsAsAxisValue(msg, this->wrist_pitch_up_button, this->wrist_pitch_down_button);
-        twist_wrs.twist.angular.y = getButtonsAsAxisValue(msg, this->wrist_pitch_up_button, this->wrist_pitch_down_button);
-        twist_wrs.twist.angular.z = getButtonsAsAxisValue(msg, this->wrist_pitch_up_button, this->wrist_pitch_down_button);
-        twist.header.frame_id = "base_link";
-        twist_wrs.header.frame_id = "wrist_link";
-        twist.header.stamp = this->get_clock()->now();
-        twist_wrs.header.stamp = twist.header.stamp;
+        auto twist_arm = geometry_msgs::msg::TwistStamped();
+        twist_arm.twist.linear.x = getAxisValue(msg, this->axis_x_joystick_axis) * multiplier;
+        twist_arm.twist.linear.y = getAxisValue(msg, this->axis_y_joystick_axis) * multiplier;
+        twist_arm.twist.linear.z = getAxisValue(msg, this->axis_z_joystick_axis) * multiplier;
+        twist_arm.header.frame_id = "base_link";
+        twist_arm.header.stamp = this->get_clock()->now();
+        auto twist_pitch = geometry_msgs::msg::TwistStamped();
+        twist_pitch.twist.angular.z = getButtonsAsAxisValue(msg, this->wrist_pitch_down_button, this->wrist_pitch_up_button) * multiplier;
+        twist_pitch.header.frame_id = "wrist_link";
+        twist_pitch.header.stamp = twist_arm.header.stamp;
+        auto twist_roll = geometry_msgs::msg::TwistStamped();
+        twist_roll.twist.angular.x = getButtonsAsAxisValue(msg, this->wrist_roll_left_button, this->wrist_roll_right_button) * multiplier;
+        twist_roll.header.frame_id = "wrist_link";
+        twist_roll.header.stamp = twist_arm.header.stamp;
 
         // invert axes
         if (this->axis_x_invert) {
-            twist.twist.linear.x *= -1;
+            twist_arm.twist.linear.x *= -1;
         }
 
         if (this->axis_y_invert) {
-            twist.twist.linear.y *= -1;
+            twist_arm.twist.linear.y *= -1;
         }
 
         if (this->axis_z_invert) {
-            twist.twist.linear.z *= -1;
+            twist_arm.twist.linear.z *= -1;
         }
 
         std_msgs::msg::Float64MultiArray gripper;
@@ -111,27 +115,37 @@ void JoystickTeleopNode::handleJoy(const sensor_msgs::msg::Joy::ConstSharedPtr& 
         }
 
         // Publish the new values
-        this->sendValues(twist, twist_wrs, gripper);
+        this->sendValues(twist_arm, twist_pitch, twist_roll, gripper, false);
     } else if (this->movement_enabled) {
         // Deadman switch no longer engaged, stop movement
         this->gripper_moving = false;
         geometry_msgs::msg::TwistStamped twist1;
         geometry_msgs::msg::TwistStamped twist2;
+        geometry_msgs::msg::TwistStamped twist_roll;
         twist1.header.frame_id = "base_link";
         twist1.header.stamp = this->get_clock()->now();
         
         twist2.header.frame_id = "wrist_link";
         twist2.header.stamp = twist1.header.stamp;
+        twist_roll.header.frame_id = "wrist_link";
+        twist_roll.header.stamp = twist1.header.stamp;
         
-        this->sendValues(twist1, twist2, this->last_gripper);
+        this->sendValues(twist1, twist2, twist_roll, this->last_gripper, true);
         this->movement_enabled = false; // Needs to be after sendValues since that sets movement_enabled = true
     }
 }
 
-void JoystickTeleopNode::sendValues(const geometry_msgs::msg::TwistStamped& twist1, const geometry_msgs::msg::TwistStamped& twist2, const std_msgs::msg::Float64MultiArray& gripper) {
-
-    this->servo_twist_publisher->publish(twist1);
-    this->servo_twist_publisher->publish(twist2);
+void JoystickTeleopNode::sendValues(const geometry_msgs::msg::TwistStamped& twist_arm, const geometry_msgs::msg::TwistStamped& twist_pitch, const geometry_msgs::msg::TwistStamped& twist_roll, const std_msgs::msg::Float64MultiArray& gripper, bool allow_zero) {
+    // Only send what is nonzero due to sending two messages to the same topic at the same time (twist_arm and twist_pitch) one overwrites the other
+    if (twist_arm.twist.linear.x != 0 || twist_arm.twist.linear.y != 0 || twist_arm.twist.linear.z != 0 || allow_zero) {
+        this->servo_twist_publisher->publish(twist_arm);
+    }
+    if (twist_pitch.twist.angular.x != 0 || twist_pitch.twist.angular.y != 0 || twist_pitch.twist.angular.z != 0 || allow_zero) {
+        this->servo_twist_publisher->publish(twist_pitch);
+    }
+    if (twist_roll.twist.angular.x != 0 || twist_roll.twist.angular.y != 0 || twist_roll.twist.angular.z != 0 || allow_zero) {
+        this->servo_twist_gripper_publisher->publish(twist_roll);
+    }
     this->gripper_publisher->publish(gripper);
 
     this->movement_enabled = true;
