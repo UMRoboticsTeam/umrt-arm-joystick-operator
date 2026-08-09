@@ -16,6 +16,7 @@
 #include "sensor_msgs/msg/joy.hpp"
 #include "std_msgs/msg/float64_multi_array.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
+#include "control_msgs/control_msgs/msg/joint_jog.hpp"
 
 
 class JoystickTeleopNode : public rclcpp::Node {
@@ -48,6 +49,7 @@ public:
 
     JoystickTeleopNode();
 
+    void sendValues2(const control_msgs::msg::JointJog& twist1, bool allow_zero);
     void sendValues(const geometry_msgs::msg::TwistStamped& twist1, const geometry_msgs::msg::TwistStamped& twist2, const geometry_msgs::msg::TwistStamped& twist_gripper, const std_msgs::msg::Float64MultiArray& gripper_values, bool allow_zero);
 
 protected:
@@ -55,7 +57,7 @@ protected:
 
     void handleJoy(const sensor_msgs::msg::Joy::ConstSharedPtr& msg);
 
-    rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr servo_twist_publisher;
+    rclcpp::Publisher<control_msgs::msg::JointJog>::SharedPtr servo_twist_publisher;
     rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr servo_twist_gripper_publisher;
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr gripper_publisher;
     rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_subscriber;

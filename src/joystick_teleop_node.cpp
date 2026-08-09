@@ -18,7 +18,7 @@ JoystickTeleopNode::JoystickTeleopNode() : Node("joystick_teleop") {
     this->last_time = std::chrono::steady_clock::now();
     this->gripper_moving = false;
 
-    this->servo_twist_publisher = this->create_publisher<geometry_msgs::msg::TwistStamped>(this->servo_twist_topic, JoystickTeleopNode::PUBLISHER_QUEUE_DEPTH);
+    this->servo_twist_publisher = this->create_publisher<control_msgs::msg::JointJog>("/servo_node/delta_joint_cmds", JoystickTeleopNode::PUBLISHER_QUEUE_DEPTH);
     // TODO: Add a parameter for gripper servo topic
     this->servo_twist_gripper_publisher = this->create_publisher<geometry_msgs::msg::TwistStamped>("/servo_node_gripper/delta_twist_cmds", JoystickTeleopNode::PUBLISHER_QUEUE_DEPTH);
     this->gripper_publisher = this->create_publisher<std_msgs::msg::Float64MultiArray>(this->gripper_topic, JoystickTeleopNode::PUBLISHER_QUEUE_DEPTH);
@@ -44,32 +44,44 @@ void JoystickTeleopNode::handleJoy(const sensor_msgs::msg::Joy::ConstSharedPtr& 
 
         // Construct the message (maybe refactor into a function)
         auto twist_arm = geometry_msgs::msg::TwistStamped();
-        twist_arm.twist.linear.x = getAxisValue(msg, this->axis_x_joystick_axis) * multiplier;
-        twist_arm.twist.linear.y = getAxisValue(msg, this->axis_y_joystick_axis) * multiplier;
-        twist_arm.twist.linear.z = getAxisValue(msg, this->axis_z_joystick_axis) * multiplier;
-        twist_arm.header.frame_id = "base_link";
-        twist_arm.header.stamp = this->get_clock()->now();
-        auto twist_pitch = geometry_msgs::msg::TwistStamped();
-        twist_pitch.twist.angular.z = getButtonsAsAxisValue(msg, this->wrist_pitch_down_button, this->wrist_pitch_up_button) * multiplier;
-        twist_pitch.header.frame_id = "wrist_link";
-        twist_pitch.header.stamp = twist_arm.header.stamp;
-        auto twist_roll = geometry_msgs::msg::TwistStamped();
-        twist_roll.twist.angular.x = getButtonsAsAxisValue(msg, this->wrist_roll_left_button, this->wrist_roll_right_button) * multiplier;
-        twist_roll.header.frame_id = "wrist_link";
-        twist_roll.header.stamp = twist_arm.header.stamp;
-
+        auto jog = control_msgs::msg::JointJog();
+        jog.joint_names.emplace_back("base_yaw");
+        jog.velocities.emplace_back(getAxisValue(msg, this->axis_x_joystick_axis) * multiplier);
+        jog.joint_names.emplace_back("base_pitch");
+        jog.velocities.emplace_back(getAxisValue(msg, this->axis_y_joystick_axis) * multiplier);
+        jog.joint_names.emplace_back("elbow_pitch");
+        jog.velocities.emplace_back(getAxisValue(msg, this->axis_z_joystick_axis) * multiplier);
+        jog.joint_names.emplace_back("wrist_pitch");
+        jog.velocities.emplace_back(getButtonsAsAxisValue(msg, this->wrist_pitch_down_button, this->wrist_pitch_up_button) * multiplier);
+        jog.joint_names.emplace_back("wrist_roll");
+        jog.velocities.emplace_back(getButtonsAsAxisValue(msg, this->wrist_roll_left_button, this->wrist_roll_right_button) * multiplier);
+        // twist_arm.twist.linear.x = getAxisValue(msg, this->axis_x_joystick_axis) * multiplier;
+        // twist_arm.twist.linear.y = getAxisValue(msg, this->axis_y_joystick_axis) * multiplier;
+        // twist_arm.twist.linear.z = getAxisValue(msg, this->axis_z_joystick_axis) * multiplier;
+        // twist_arm.header.frame_id = "base_link";
+        // twist_arm.header.stamp = this->get_clock()->now();
+        // auto twist_pitch = geometry_msgs::msg::TwistStamped();
+        // twist_pitch.twist.angular.z = getButtonsAsAxisValue(msg, this->wrist_pitch_down_button, this->wrist_pitch_up_button) * multiplier;
+        // twist_pitch.header.frame_id = "wrist_link";
+        // twist_pitch.header.stamp = twist_arm.header.stamp;
+        // auto twist_roll = geometry_msgs::msg::TwistStamped();
+        // twist_roll.twist.angular.x = getButtonsAsAxisValue(msg, this->wrist_roll_left_button, this->wrist_roll_right_button) * multiplier;
+        // twist_roll.header.frame_id = "wrist_link";
+        // twist_roll.header.stamp = twist_arm.header.stamp;
+        jog.header.frame_id = "base_link";
+        jog.header.stamp = this->get_clock()->now();
         // invert axes
-        if (this->axis_x_invert) {
-            twist_arm.twist.linear.x *= -1;
-        }
+        // if (this->axis_x_invert) {
+        //     twist_arm.twist.linear.x *= -1;
+        // }
 
-        if (this->axis_y_invert) {
-            twist_arm.twist.linear.y *= -1;
-        }
+        // if (this->axis_y_invert) {
+        //     twist_arm.twist.linear.y *= -1;
+        // }
 
-        if (this->axis_z_invert) {
-            twist_arm.twist.linear.z *= -1;
-        }
+        // if (this->axis_z_invert) {
+        //     twist_arm.twist.linear.z *= -1;
+        // }
 
         std_msgs::msg::Float64MultiArray gripper;
 
@@ -115,10 +127,28 @@ void JoystickTeleopNode::handleJoy(const sensor_msgs::msg::Joy::ConstSharedPtr& 
         }
 
         // Publish the new values
-        this->sendValues(twist_arm, twist_pitch, twist_roll, gripper, false);
+        RCLCPP_INFO(this->get_logger(), "Sending something");
+        this->sendValues2(jog, false);
+        // this->sendValues(twist_arm, twist_pitch, twist_roll, gripper, false);
     } else if (this->movement_enabled) {
         // Deadman switch no longer engaged, stop movement
         this->gripper_moving = false;
+
+        auto jog = control_msgs::msg::JointJog();
+        jog.joint_names.emplace_back("base_yaw");
+        jog.velocities.emplace_back(0);
+        jog.joint_names.emplace_back("base_pitch");
+        jog.velocities.emplace_back(0);
+        jog.joint_names.emplace_back("elbow_pitch");
+        jog.velocities.emplace_back(0);
+        jog.joint_names.emplace_back("wrist_pitch");
+        jog.velocities.emplace_back(0);
+        jog.joint_names.emplace_back("wrist_roll");
+        jog.velocities.emplace_back(0);
+
+        jog.header.frame_id = "base_link";
+        jog.header.stamp = this->get_clock()->now();
+        
         geometry_msgs::msg::TwistStamped twist1;
         geometry_msgs::msg::TwistStamped twist2;
         geometry_msgs::msg::TwistStamped twist_roll;
@@ -130,26 +160,44 @@ void JoystickTeleopNode::handleJoy(const sensor_msgs::msg::Joy::ConstSharedPtr& 
         twist_roll.header.frame_id = "wrist_link";
         twist_roll.header.stamp = twist1.header.stamp;
         
-        this->sendValues(twist1, twist2, twist_roll, this->last_gripper, true);
+        this->sendValues2(jog, true);
+        // this->sendValues(twist1, twist2, twist_roll, this->last_gripper, true);
         this->movement_enabled = false; // Needs to be after sendValues since that sets movement_enabled = true
     }
 }
 
 void JoystickTeleopNode::sendValues(const geometry_msgs::msg::TwistStamped& twist_arm, const geometry_msgs::msg::TwistStamped& twist_pitch, const geometry_msgs::msg::TwistStamped& twist_roll, const std_msgs::msg::Float64MultiArray& gripper, bool allow_zero) {
+    // // Only send what is nonzero due to sending two messages to the same topic at the same time (twist_arm and twist_pitch) one overwrites the other
+    // if (twist_arm.twist.linear.x != 0 || twist_arm.twist.linear.y != 0 || twist_arm.twist.linear.z != 0 || allow_zero) {
+    //     this->servo_twist_publisher->publish(twist_arm);
+    // }
+    // if (twist_pitch.twist.angular.x != 0 || twist_pitch.twist.angular.y != 0 || twist_pitch.twist.angular.z != 0 || allow_zero) {
+    //     this->servo_twist_publisher->publish(twist_pitch);
+    // }
+    // if (twist_roll.twist.angular.x != 0 || twist_roll.twist.angular.y != 0 || twist_roll.twist.angular.z != 0 || allow_zero) {
+    //     this->servo_twist_gripper_publisher->publish(twist_roll);
+    // }
+    // this->gripper_publisher->publish(gripper);
+
+    // this->movement_enabled = true;
+    // this->last_gripper = gripper;
+}
+
+void JoystickTeleopNode::sendValues2(const control_msgs::msg::JointJog& twist_arm, bool allow_zero) {
     // Only send what is nonzero due to sending two messages to the same topic at the same time (twist_arm and twist_pitch) one overwrites the other
-    if (twist_arm.twist.linear.x != 0 || twist_arm.twist.linear.y != 0 || twist_arm.twist.linear.z != 0 || allow_zero) {
-        this->servo_twist_publisher->publish(twist_arm);
-    }
-    if (twist_pitch.twist.angular.x != 0 || twist_pitch.twist.angular.y != 0 || twist_pitch.twist.angular.z != 0 || allow_zero) {
-        this->servo_twist_publisher->publish(twist_pitch);
-    }
-    if (twist_roll.twist.angular.x != 0 || twist_roll.twist.angular.y != 0 || twist_roll.twist.angular.z != 0 || allow_zero) {
-        this->servo_twist_gripper_publisher->publish(twist_roll);
-    }
-    this->gripper_publisher->publish(gripper);
+    this->servo_twist_publisher->publish(twist_arm);
+    // if (twist_arm.twist.linear.x != 0 || twist_arm.twist.linear.y != 0 || twist_arm.twist.linear.z != 0 || allow_zero) {
+    // }
+    // if (twist_pitch.twist.angular.x != 0 || twist_pitch.twist.angular.y != 0 || twist_pitch.twist.angular.z != 0 || allow_zero) {
+    //     this->servo_twist_publisher->publish(twist_pitch);
+    // }
+    // if (twist_roll.twist.angular.x != 0 || twist_roll.twist.angular.y != 0 || twist_roll.twist.angular.z != 0 || allow_zero) {
+    //     this->servo_twist_gripper_publisher->publish(twist_roll);
+    // }
+    // this->gripper_publisher->publish(gripper);
 
     this->movement_enabled = true;
-    this->last_gripper = gripper;
+    // this->last_gripper = gripper;
 }
 
 void JoystickTeleopNode::initializeParameters() {

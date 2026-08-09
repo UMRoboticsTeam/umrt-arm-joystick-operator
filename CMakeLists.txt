@@ -17,6 +17,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
         std_msgs
         geometry_msgs
         sensor_msgs
+        control_msgs
         ament_cmake_python
         )
 
